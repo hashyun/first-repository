@@ -1,0 +1,183 @@
+# 주식 투자심사 승인서{% if m.is_demo %} [데모 데이터]{% endif %}
+
+
+{% if m.is_demo %}
+> 이 승인서는 **가상의 데모 데이터**로 생성되었습니다. 실제 기업·시장 수치가 아닙니다.
+
+{% endif %}
+**판정: {{ m.decision.verdict }}** | 내부등급 {{ m.decision.grade }} | 평점 {{ "%.1f"|format(m.decision.score) }}점 | 승인금액 {{ m.decision.approved_amount|won }}
+
+## 1. {{ SECTIONS[0] }}
+
+| 항목 | 내용 |
+|---|---|
+| 종목 | {{ m.company_name|mdcell }} ({{ m.stock_code }}) |
+| 신청금액 | {{ m.requested_amount|won }} |
+| 포트폴리오 규모 | {{ m.portfolio_value|won }} |
+| 신청일 | {{ m.request_date.isoformat() }} |
+| 심사자 | {{ m.reviewer|mdcell }} |
+
+## 2. {{ SECTIONS[1] }}
+
+| 항목 | 내용 |
+|---|---|
+{% for k, v in m.company_rows %}
+| {{ k }} | {{ v|mdcell }} |
+{% endfor %}
+
+**최대주주 현황**
+
+{% if m.shareholders %}
+| 성명 | 관계 | 보유주식수 | 지분율(%) |
+|---|---|---|---|
+{% for s in m.shareholders %}
+| {{ s.name|mdcell }} | {{ s.relation|mdcell }} | {{ s.shares|num(0) }} | {{ s.ratio|num(2) }} |
+{% endfor %}
+{% else %}
+N/A (데이터 없음)
+{% endif %}
+
+## 3. {{ SECTIONS[2] }}
+
+{% if m.fin_years %}
+기준: {{ m.fs_div_label or "N/A" }}, 금액 단위 억원
+
+| 항목 | {% for y in m.fin_years %}{{ y }} | {% endfor %}
+
+|---|{% for y in m.fin_years %}---|{% endfor %}
+
+{% for label, vals in m.fin_amount_rows %}
+| {{ label }} | {% for v in vals %}{{ v }} | {% endfor %}
+
+{% endfor %}
+
+| 지표 | {% for y in m.fin_years %}{{ y }} | {% endfor %}
+
+|---|{% for y in m.fin_years %}---|{% endfor %}
+
+{% for label, vals in m.fin_ratio_rows %}
+| {{ label }} | {% for v in vals %}{{ v }} | {% endfor %}
+
+{% endfor %}
+{% else %}
+재무제표 데이터 없음 (N/A)
+{% endif %}
+
+{% for c in m.fin_comments %}
+- {{ c }}
+{% endfor %}
+
+**밸류에이션**
+
+| 항목 | 값 |
+|---|---|
+{% for k, v in m.valuation_rows %}
+| {{ k }} | {{ v }} |
+{% endfor %}
+
+## 4. {{ SECTIONS[3] }}
+
+거시환경 국면: **{{ m.macro_regime }}**
+
+| 지표 | 출처 | 최신값 | 기준일 | 6개월 변화 |
+|---|---|---|---|---|
+{% for label, src, val, dt, chg in m.macro_rows %}
+| {{ label }} | {{ src }} | {{ val }} | {{ dt }} | {{ chg }} |
+{% endfor %}
+
+## 5. {{ SECTIONS[4] }} (최근 90일)
+
+{% if m.disclosures is none %}
+N/A (공시 조회 불가)
+{% elif m.disclosures %}
+| 접수일 | 공시 제목 | 제출인 |
+|---|---|---|
+{% for d in m.disclosures[:15] %}
+| {{ d.date }} | [{{ d.title|mdcell }}]({{ d.url }}) | {{ d.filer|mdcell }} |
+{% endfor %}
+{% if m.disclosures|length > 15 %}
+
+외 {{ m.disclosures|length - 15 }}건 생략
+{% endif %}
+{% else %}
+최근 90일 내 공시 없음
+{% endif %}
+
+## 6. {{ SECTIONS[5] }}
+
+{% if m.decision.flags %}
+| 구분 | 항목 | 내용 |
+|---|---|---|
+{% for f in m.decision.flags %}
+| {{ {"reject": "녹아웃(거절)", "downgrade": "녹아웃(하향)", "warning": "경고"}[f.level] }} | {{ f.title|mdcell }} | {{ f.detail|mdcell }} |
+{% endfor %}
+{% else %}
+확인된 녹아웃·경고 항목 없음
+{% endif %}
+
+## 7. {{ SECTIONS[6] }}
+
+| 평가항목 | 기본배점 | 적용배점 | 득점 |
+|---|---|---|---|
+{% for c in m.scorecard.categories %}
+| {{ c.name }} | {{ c.weight|num(0) }} | {{ c.effective_weight|num(1) if c.ratio is not none else "N/A" }} | {{ c.points|num(1) }} |
+{% endfor %}
+| **합계** | 100 | 100 | **{{ "%.1f"|format(m.scorecard.total) }}** |
+
+내부등급: **{{ m.decision.grade }}**
+
+{% for c in m.scorecard.categories %}
+{% if c.indicators %}
+- {{ c.name }}: {% for i in c.indicators %}{{ i.label }} {{ i.value|num(2) }}{{ i.unit if i.value is not none else "" }}{% if i.score is not none %}({{ (i.score * 100)|round|int }}%){% endif %}{{ ", " if not loop.last }}{% endfor %}
+
+{% endif %}
+{% endfor %}
+
+## 8. {{ SECTIONS[7] }}
+
+_작성: {{ m.opinion_source }}{% if m.model_name %} ({{ m.model_name }}){% endif %}_
+
+{{ m.opinion }}
+
+## 9. {{ SECTIONS[8] }}
+
+| 항목 | 내용 |
+|---|---|
+| 판정 | **{{ m.decision.verdict }}** |
+| 내부등급 / 평점 | {{ m.decision.grade }} / {{ "%.1f"|format(m.decision.score) }}점 |
+| 투자한도 | 포트폴리오의 {{ m.decision.limit_pct|num(0) }}% |
+| 신청금액 | {{ m.decision.requested_amount|won }} |
+| 승인금액 | **{{ m.decision.approved_amount|won }}**{% if m.decision.reduced %} (한도 초과로 감액){% endif %} |
+
+판정 근거:
+
+{% for r in m.decision.rationale %}
+- {{ r }}
+{% endfor %}
+
+승인조건(약정):
+
+{% for c in m.decision.covenants %}
+{{ loop.index }}. {{ c }}
+{% endfor %}
+
+## 10. {{ SECTIONS[9] }}
+
+| 구분 | 담당 | 심사역 | 승인권자 |
+|---|---|---|---|
+| 성명 | | | |
+| 서명 | <br><br> | <br><br> | <br><br> |
+| 일자 | | | |
+{% if m.notes %}
+
+---
+
+**데이터·처리 비고**
+{% for n in m.notes %}
+- {{ n }}
+{% endfor %}
+{% endif %}
+
+---
+
+*{{ DISCLAIMER }}*

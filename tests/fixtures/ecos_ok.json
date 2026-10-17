@@ -1,0 +1,22 @@
+{
+ "StatisticSearch": {
+  "list_total_count": 3,
+  "row": [
+   {
+    "STAT_CODE": "722Y001",
+    "TIME": "202604",
+    "DATA_VALUE": "2.75"
+   },
+   {
+    "STAT_CODE": "722Y001",
+    "TIME": "202605",
+    "DATA_VALUE": "2.75"
+   },
+   {
+    "STAT_CODE": "722Y001",
+    "TIME": "202606",
+    "DATA_VALUE": "-"
+   }
+  ]
+ }
+}

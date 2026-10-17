@@ -1,0 +1,11 @@
+requests>=2.31
+pandas>=2.0
+Jinja2>=3.1
+python-dotenv>=1.0
+
+# 선택 설치
+anthropic>=0.40        # Claude 심사의견 (없으면 규칙 기반 문장)
+finance-datareader>=0.9  # 주가/밸류에이션 (없으면 해당 항목 N/A)
+
+# 개발
+pytest>=8.0

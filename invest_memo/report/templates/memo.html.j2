@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>투자심사 승인서 - {{ m.company_name }} ({{ m.stock_code }})</title>
+<style>
+  body { font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; color: #111; background: #fff; margin: 0; padding: 16px; font-size: 13px; line-height: 1.5; }
+  .page { max-width: 794px; margin: 0 auto; }
+  h1 { text-align: center; font-size: 22px; letter-spacing: 4px; border-bottom: 3px double #111; padding-bottom: 8px; }
+  h2 { font-size: 15px; background: #eee; padding: 4px 8px; border-left: 4px solid #333; margin: 22px 0 8px; }
+  table { border-collapse: collapse; width: 100%; margin: 6px 0; }
+  th, td { border: 1px solid #888; padding: 4px 6px; text-align: left; vertical-align: top; }
+  th { background: #f4f4f4; }
+  td.n, th.n { text-align: right; }
+  .verdict { border: 2px solid #111; padding: 8px 12px; margin: 10px 0; font-size: 15px; }
+  .verdict b.v { font-size: 20px; }
+  .demo { background: #fff3cd; border: 1px solid #e0b100; padding: 6px 10px; }
+  .sign td { height: 64px; width: 25%; }
+  .sign td.h { height: auto; text-align: center; background: #f4f4f4; }
+  .note { color: #555; font-size: 12px; }
+  .reject { color: #b00020; font-weight: bold; }
+  .downgrade { color: #b35900; font-weight: bold; }
+  footer { margin-top: 24px; border-top: 1px solid #888; padding-top: 6px; font-size: 11px; color: #555; }
+  .opinion { white-space: pre-wrap; border: 1px solid #ccc; padding: 8px 10px; }
+  @media print { body { padding: 0; } .page { max-width: none; } h2 { break-after: avoid; } table { break-inside: avoid; } @page { size: A4; margin: 15mm; } }
+</style>
+</head>
+<body>
+<div class="page">
+<h1>주식 투자심사 승인서</h1>
+{% if m.is_demo %}
+<p class="demo"><b>데모 데이터</b>: 가상의 수치로 생성된 예시이며 실제 기업·시장 데이터가 아닙니다.</p>
+{% endif %}
+<div class="verdict">판정 <b class="v">{{ m.decision.verdict }}</b> &nbsp;|&nbsp; 내부등급 {{ m.decision.grade }} &nbsp;|&nbsp; 평점 {{ "%.1f"|format(m.decision.score) }}점 &nbsp;|&nbsp; 승인금액 {{ m.decision.approved_amount|won }}</div>
+
+<h2>1. {{ SECTIONS[0] }}</h2>
+<table>
+  <tr><th>종목</th><td>{{ m.company_name }} ({{ m.stock_code }})</td><th>신청일</th><td>{{ m.request_date.isoformat() }}</td></tr>
+  <tr><th>신청금액</th><td>{{ m.requested_amount|won }}</td><th>포트폴리오 규모</th><td>{{ m.portfolio_value|won }}</td></tr>
+  <tr><th>심사자</th><td colspan="3">{{ m.reviewer }}</td></tr>
+</table>
+
+<h2>2. {{ SECTIONS[1] }}</h2>
+<table>
+{% for k, v in m.company_rows %}
+  <tr><th style="width:25%">{{ k }}</th><td>{{ v }}</td></tr>
+{% endfor %}
+</table>
+<p><b>최대주주 현황</b></p>
+{% if m.shareholders %}
+<table>
+  <tr><th>성명</th><th>관계</th><th class="n">보유주식수</th><th class="n">지분율(%)</th></tr>
+{% for s in m.shareholders %}
+  <tr><td>{{ s.name }}</td><td>{{ s.relation }}</td><td class="n">{{ s.shares|num(0) }}</td><td class="n">{{ s.ratio|num(2) }}</td></tr>
+{% endfor %}
+</table>
+{% else %}
+<p>N/A (데이터 없음)</p>
+{% endif %}
+
+<h2>3. {{ SECTIONS[2] }}</h2>
+{% if m.fin_years %}
+<p class="note">기준: {{ m.fs_div_label or "N/A" }}, 금액 단위 억원</p>
+<table>
+  <tr><th>항목</th>{% for y in m.fin_years %}<th class="n">{{ y }}</th>{% endfor %}</tr>
+{% for label, vals in m.fin_amount_rows %}
+  <tr><td>{{ label }}</td>{% for v in vals %}<td class="n">{{ v }}</td>{% endfor %}</tr>
+{% endfor %}
+</table>
+<table>
+  <tr><th>지표</th>{% for y in m.fin_years %}<th class="n">{{ y }}</th>{% endfor %}</tr>
+{% for label, vals in m.fin_ratio_rows %}
+  <tr><td>{{ label }}</td>{% for v in vals %}<td class="n">{{ v }}</td>{% endfor %}</tr>
+{% endfor %}
+</table>
+{% else %}
+<p>재무제표 데이터 없음 (N/A)</p>
+{% endif %}
+<ul>
+{% for c in m.fin_comments %}
+  <li>{{ c }}</li>
+{% endfor %}
+</ul>
+<p><b>밸류에이션</b></p>
+<table>
+{% for k, v in m.valuation_rows %}
+  <tr><th style="width:40%">{{ k }}</th><td class="n">{{ v }}</td></tr>
+{% endfor %}
+</table>
+
+<h2>4. {{ SECTIONS[3] }}</h2>
+<p>거시환경 국면: <b>{{ m.macro_regime }}</b></p>
+<table>
+  <tr><th>지표</th><th>출처</th><th class="n">최신값</th><th>기준일</th><th class="n">6개월 변화</th></tr>
+{% for label, src, val, dt, chg in m.macro_rows %}
+  <tr><td>{{ label }}</td><td>{{ src }}</td><td class="n">{{ val }}</td><td>{{ dt }}</td><td class="n">{{ chg }}</td></tr>
+{% endfor %}
+</table>
+
+<h2>5. {{ SECTIONS[4] }} (최근 90일)</h2>
+{% if m.disclosures is none %}
+<p>N/A (공시 조회 불가)</p>
+{% elif m.disclosures %}
+<table>
+  <tr><th>접수일</th><th>공시 제목</th><th>제출인</th></tr>
+{% for d in m.disclosures[:15] %}
+  <tr><td>{{ d.date }}</td><td><a href="{{ d.url }}">{{ d.title }}</a></td><td>{{ d.filer }}</td></tr>
+{% endfor %}
+</table>
+{% if m.disclosures|length > 15 %}<p class="note">외 {{ m.disclosures|length - 15 }}건 생략</p>{% endif %}
+{% else %}
+<p>최근 90일 내 공시 없음</p>
+{% endif %}
+
+<h2>6. {{ SECTIONS[5] }}</h2>
+{% if m.decision.flags %}
+<table>
+  <tr><th>구분</th><th>항목</th><th>내용</th></tr>
+{% for f in m.decision.flags %}
+  <tr><td class="{{ f.level }}">{{ {"reject": "녹아웃(거절)", "downgrade": "녹아웃(하향)", "warning": "경고"}[f.level] }}</td><td>{{ f.title }}</td><td>{{ f.detail }}</td></tr>
+{% endfor %}
+</table>
+{% else %}
+<p>확인된 녹아웃·경고 항목 없음</p>
+{% endif %}
+
+<h2>7. {{ SECTIONS[6] }}</h2>
+<table>
+  <tr><th>평가항목</th><th class="n">기본배점</th><th class="n">적용배점</th><th class="n">득점</th></tr>
+{% for c in m.scorecard.categories %}
+  <tr><td>{{ c.name }}</td><td class="n">{{ c.weight|num(0) }}</td><td class="n">{{ c.effective_weight|num(1) if c.ratio is not none else "N/A" }}</td><td class="n">{{ c.points|num(1) }}</td></tr>
+{% endfor %}
+  <tr><th>합계</th><th class="n">100</th><th class="n">100</th><th class="n">{{ "%.1f"|format(m.scorecard.total) }}</th></tr>
+</table>
+<p>내부등급: <b>{{ m.decision.grade }}</b></p>
+<ul class="note">
+{% for c in m.scorecard.categories %}
+{% if c.indicators %}
+  <li>{{ c.name }}: {% for i in c.indicators %}{{ i.label }} {{ i.value|num(2) }}{{ i.unit if i.value is not none else "" }}{% if i.score is not none %}({{ (i.score * 100)|round|int }}%){% endif %}{{ ", " if not loop.last }}{% endfor %}</li>
+{% endif %}
+{% endfor %}
+</ul>
+
+<h2>8. {{ SECTIONS[7] }}</h2>
+<p class="note">작성: {{ m.opinion_source }}{% if m.model_name %} ({{ m.model_name }}){% endif %}</p>
+<div class="opinion">{{ m.opinion }}</div>
+
+<h2>9. {{ SECTIONS[8] }}</h2>
+<table>
+  <tr><th style="width:25%">판정</th><td><b>{{ m.decision.verdict }}</b></td></tr>
+  <tr><th>내부등급 / 평점</th><td>{{ m.decision.grade }} / {{ "%.1f"|format(m.decision.score) }}점</td></tr>
+  <tr><th>투자한도</th><td>포트폴리오의 {{ m.decision.limit_pct|num(0) }}%</td></tr>
+  <tr><th>신청금액</th><td>{{ m.decision.requested_amount|won }}</td></tr>
+  <tr><th>승인금액</th><td><b>{{ m.decision.approved_amount|won }}</b>{% if m.decision.reduced %} (한도 초과로 감액){% endif %}</td></tr>
+</table>
+<p><b>판정 근거</b></p>
+<ul>
+{% for r in m.decision.rationale %}
+  <li>{{ r }}</li>
+{% endfor %}
+</ul>
+<p><b>승인조건(약정)</b></p>
+<ol>
+{% for c in m.decision.covenants %}
+  <li>{{ c }}</li>
+{% endfor %}
+</ol>
+
+<h2>10. {{ SECTIONS[9] }}</h2>
+<table class="sign">
+  <tr><td class="h"></td><td class="h">담당</td><td class="h">심사역</td><td class="h">승인권자</td></tr>
+  <tr><td class="h">성명</td><td></td><td></td><td></td></tr>
+  <tr><td class="h">서명</td><td></td><td></td><td></td></tr>
+  <tr><td class="h">일자</td><td></td><td></td><td></td></tr>
+</table>
+
+{% if m.notes %}
+<p><b>데이터·처리 비고</b></p>
+<ul class="note">
+{% for n in m.notes %}
+  <li>{{ n }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+
+<footer>{{ DISCLAIMER }}</footer>
+</div>
+</body>
+</html>

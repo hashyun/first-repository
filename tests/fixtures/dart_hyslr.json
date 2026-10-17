@@ -1,0 +1,26 @@
+{
+ "status": "000",
+ "list": [
+  {
+   "nm": "소액주주",
+   "relate": "기타",
+   "stock_knd": "보통주",
+   "trmend_posesn_stock_co": "1,000",
+   "trmend_posesn_stock_qota_rt": "1.0"
+  },
+  {
+   "nm": "갑",
+   "relate": "최대주주",
+   "stock_knd": "보통주",
+   "trmend_posesn_stock_co": "2,000",
+   "trmend_posesn_stock_qota_rt": "20.5"
+  },
+  {
+   "nm": "갑",
+   "relate": "최대주주",
+   "stock_knd": "우선주",
+   "trmend_posesn_stock_co": "500",
+   "trmend_posesn_stock_qota_rt": "5.0"
+  }
+ ]
+}

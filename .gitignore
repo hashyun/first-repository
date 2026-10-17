@@ -47,3 +47,11 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# invest_memo
+.env
+.cache/
+reports/
+__pycache__/
+*.pyc
+.pytest_cache/
